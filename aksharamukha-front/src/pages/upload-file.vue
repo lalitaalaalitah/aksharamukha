@@ -1,5 +1,6 @@
 <template>
-  <q-page padding>
+  <q-page class="q-pa-md" >
+    <converter-menu highlight="files"></converter-menu>
     <div class="print-hide">
       <controls-io v-model="optionsRet" :extra="false" :multiple="true"> </controls-io>
     </div>
@@ -38,6 +39,8 @@
 <script>
 import Transliterate from '../components/Transliterate'
 import ControlsIo from '../components/ControlsIo'
+import ConverterMenu from '../components/ConverterMenu'
+
 import {QPageSticky, QUploader, QField, QSpinnerComment} from 'quasar'
 import { ScriptMixin } from '../mixins/ScriptMixin'
 import sanitizeHtml from 'sanitize-html'
@@ -54,7 +57,8 @@ export default {
     Transliterate,
     QUploader,
     QSpinnerComment,
-    QField
+    QField,
+    ConverterMenu
   },
   data () {
     return {
@@ -160,7 +164,8 @@ export default {
         this.options = this.optionsRet
         await this.readFiles()
 
-        if (this.docxWarning && !this.scriptIndicList.includes(this.optionsRet.inputScript)) {
+        var checkCondition = false
+        if (checkCondition) {
           this.$q.notify({
             message: 'You cannot convert from Roman scripts with DocX files',
             position: 'center',
@@ -188,9 +193,13 @@ export default {
                 blob = new Blob([content], {type: 'text/plain;charset=utf-8'})
                 saveAs(blob, downloadName)
               } else if (file.name.includes('.xml')) {
+                content = await this.convertXMLAsync(this.options.inputScript, outputScript, file.content, this.options.sourcePreserve, this.options.postOptions[outputScript], this.options.preOptions)
+
                 blob = new Blob([content], {type: 'text/xml;charset=utf-8'})
                 saveAs(blob, downloadName)
               } else if (file.name.includes('.docx')) {
+                content = await this.convertXMLAsync(this.options.inputScript, outputScript, file.content, this.options.sourcePreserve, this.options.postOptions[outputScript], this.options.preOptions)
+
                 file.zip.file('word/document.xml', content)
                 file.zip.generateAsync({type: 'blob'})
                   .then(function (blob) {

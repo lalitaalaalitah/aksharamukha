@@ -1,3 +1,4 @@
+from aksharamukha import transliterate
 from flask import Flask, jsonify, request, redirect
 from flask_cors import CORS
 import re
@@ -10,7 +11,7 @@ from collections import Counter
 import unicodedata
 import io
 
-from aksharamukha.transliterate import convert, unique_everseen, removeA, auto_detect, detect_preoptions
+from aksharamukha.transliterate import convert, unique_everseen, removeA, auto_detect, detect_preoptions, get_semitic_json
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +23,8 @@ def main_site():
 
 @app.route('/api/autodetect', methods=['POST', 'GET'])
 def auto_detect_request():
+    #print('The source is ' + auto_detect(request.json['text']))
+
     return auto_detect(request.json['text'])
 
 @app.route('/api/detectpre', methods=['POST', 'GET'])
@@ -96,6 +99,29 @@ def latinmatrix_list():
         results_hk[script] = convert(script, 'HK', results[script], False,[],[])
 
     guide_chars = convert('HK', guide, json.dumps(chars).replace(' ',''), False,[],[])
+
+    results_hk = convert(guide, 'HK', guide_chars, False,[],[])
+
+    results_final['results'] = results
+    results_final['resultsHK'] = results_hk
+    results_final['guideChars'] = guide_chars
+
+    return jsonify(results_final)
+
+@app.route('/api/latinsemiticmatrix', methods=['POST', 'GET'])
+def semiticmatrix_list():
+    results_final = {}
+    results = {}
+    results_hk = {}
+    guide = request.json['guide']
+    scripts = request.json['scripts']
+    chars = request.json['chars']
+
+    for script in scripts:
+        results[script] = convert('Latn', script, json.dumps(chars,ensure_ascii=False).replace(' ',''), False,[],[])
+
+    guide_chars = convert('Latn', guide, json.dumps(chars, ensure_ascii=False).replace(' ','').replace('،',','), False,[],[])
+    results_hk = convert(guide, 'Latn', guide_chars, False,[],[])
 
     results_final['results'] = results
     results_final['resultsHK'] = results_hk
@@ -219,7 +245,7 @@ def syllabary_list():
         syllabary_guide = json.loads(syllabary_guide.replace('،', ',').replace('、', ','))
     elif script2 == 'Hebrew':
         syllabary_guide = convert(script1, script2, syllabary, False,['shvanakhall'],[])
-        print(syllabary_guide)
+        #print(syllabary_guide)
         syllabary_guide = json.loads(syllabary_guide.replace('،', ',').replace('、', ','))
     else:
         syllabary_guide = convert(script1, script2, syllabary, False,[],[])
@@ -360,7 +386,7 @@ def scriptmatrix_list():
     """
 
     f = open ('resources/script_matrix/script_matrix_' + guide + charnums + '.json', 'r', encoding='utf-8')
-    results_final = json.loads(f.read(), encoding = "utf-8")
+    results_final = json.loads(f.read())
     f.close()
 
     return jsonify(results_final)
@@ -371,6 +397,77 @@ def describe_list():
     results['script1'] = convert('HK', request.json['script1'], json.dumps(request.json['text']).replace(' ',''), False,[],[])
     results['script2'] = convert('HK', request.json['script2'], json.dumps(request.json['text']).replace(' ',''), False,[],[])
     results['script1hk'] = convert(request.json['script1'], 'HK', results['script1'], False,[],[])
+    return jsonify(results)
+
+@app.route('/api/semiticmatrix', methods=['POST', 'GET'])
+def character_matrix_semitic():
+    script2 = request.json['script2']
+
+    f = open ('resources/semitic_matrix/semitic_matrix_' + script2  + '.json', 'r', encoding='utf-8')
+    results_final = json.loads(f.read())
+    f.close()
+
+    return jsonify(results_final)
+
+@app.route('/api/describesemitic', methods=['POST', 'GET'])
+def describe_list_semitic():
+    semitic_json = get_semitic_json()
+
+    script1 = request.json['script1']
+    script2 = request.json['script2']
+
+    if script2 in ['Type', 'Latn']:
+        f = open ("resources/semitic_syllabary/semitic_syllabary_" + script1 + "_" + script2  + ".json", 'r', encoding='utf-8')
+        results_final = json.loads(f.read())
+        f.close()
+
+        return jsonify(results_final)
+
+    charsScript1 = []
+    charsScript1R = []
+    charsScript2 = []
+    charsScript2R = []
+    charsLatn = []
+
+    results = {}
+    vowels = GeneralMap.semiticVowelsAll
+    vowelsInitial = GeneralMap.vowelsInitialAll
+
+    m = transliterate.process('Latn', script1, 'm')
+    for lat, char in semitic_json['ssub']['Latn'][script1].items():
+        latOrig = lat
+        if lat in vowels:
+            lat = 'm' + lat
+            char = m + char
+
+        charsScript1.append(char)
+        charguide = transliterate.process('Latn', script2, lat, nativize=False)
+        charsScript2.append(charguide)
+
+        if latOrig in vowels or latOrig in vowelsInitial:
+            charguideReverse = transliterate.process(script2, script1, charguide, nativize=False)
+        else:
+            if latOrig != 'ˀâ':
+                charguideReverse = transliterate.process(script2, script1, charguide, nativize=False, \
+                    post_options = ['removeVowelsSyriac', 'removeDiacriticsArabic', 'ArabAtoAleph', ''])\
+                        .replace('\u05B7', '').replace('\u07A6', '')
+            else:
+                charguideReverse = transliterate.process(script2, script1, charguide, nativize=False)
+
+        charsScript2R.append(charguideReverse)
+
+        charReverse = transliterate.process(script1, script2, char, nativize=False)
+        charsScript1R.append(charReverse)
+        charsLatn.append(lat)
+
+    #print(charsScript2R)
+
+    results['script1'] =  charsScript1
+    results['script1R'] =  charsScript1R
+    results['script2'] =  charsScript2
+    results['script2R'] =  charsScript2R
+    results['scriptLatn'] = charsLatn
+
     return jsonify(results)
 
 @app.route('/api/website', methods=['POST', 'GET'])
@@ -495,6 +592,27 @@ def convert_post():
     #print(text)
 
     return text
+
+@app.route('/api/convert_xml', methods=['POST', 'GET'])
+def convert_xml():
+    import copy
+    from lxml import etree
+
+    if 'text' in request.json:
+        parser = etree.XMLParser(ns_clean=True, remove_comments=True)
+        new_root = etree.fromstring(request.json['text'].encode("utf8"), parser)
+
+        #print(new_root.tag)
+
+        for el in new_root.iter():
+            #(el, el.text, type(el.text))
+            if el.text is not None:
+                el.text = convert(request.json['source'], request.json['target'], el.text, request.json['nativize'],
+                request.json['preOptions'], request.json['postOptions'])
+    else:
+        text = ''
+
+    return jsonify(etree.tostring(new_root, encoding='unicode'))
 
 
 @app.route('/api/convert_loop_tgt', methods=['POST', 'GET'])

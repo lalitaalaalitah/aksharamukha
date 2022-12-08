@@ -1,6 +1,5 @@
 <template>
   <!-- Fix Urdu ai and au -->
-
   <q-page class="q-pa-md" id="scrollstart">
           <q-alert
           color="red-4"
@@ -10,6 +9,7 @@
           class="q-mb-sm q-mr-xl"
           v-if="!checkifOnline && $q.platform.is.cordova"
         > You're not currently connected. Please activate your mobile data or Wi-Fi to use the app.  </q-alert>
+    <converter-menu highlight="texts"></converter-menu>
   <div class="row">
       <div class="row col-xs-12 col-md-11 col-xl-5 q-ma-md float-div print-hide">
        <div class="row">
@@ -28,6 +28,9 @@
        @click="updateHist" dense> <small>{{getScriptObject(inputPast).label}}</small> </q-btn>
       <q-icon name="history" size="25px" v-show="inputPast !== ''" class="print-hide"/>
       </div>
+      <q-btn class="q-ma-sm q-mt-md btn2 print-hide col-xs-1 col-md-1" @click="copySource" :data-clipboard-text="textInput.replace(/<br\/>/g, '\n')"> <q-icon name="file_copy" /><q-tooltip>Copy source text</q-tooltip></q-btn>
+    <input-options :inputScript="inputScript" :outputScript="outputScript" :preOptionsInput="preOptions" :showscriptName="false"
+      :postOptions="postOptions" v-model="preOptions" @input="convert"></input-options>
     <q-input
       v-model.trim="textInput"
       type="textarea"
@@ -44,10 +47,7 @@
       ></q-input>
     <input-notice :inputScript="inputScript" :outputScript="outputScript" :preOptions="preOptions"
        :postOptions="postOptions" :OCRPerformed="OCRPerformed"></input-notice>
-    <input-options :inputScript="inputScript" :outputScript="outputScript" :preOptionsInput="preOptions"
-      :postOptions="postOptions" v-model="preOptions" @input="convert"></input-options>
     <div class="">
-      <q-btn class="q-ma-sm btn2 print-hide col-xs-1 col-md-1" @click="copySource" :data-clipboard-text="textInput.replace(/<br\/>/g, '\n')"> <q-icon name="file_copy" /><q-tooltip>Copy source text</q-tooltip></q-btn>
       <q-btn class="q-ma-sm print-hide col-xs-3 col-md-3" @click="uploadImage" label="Image/PDF" v-show="displayImageButton" v-if="!$q.platform.is.cordova" icon="add photo alternate"> <q-tooltip>Upload image/PDF</q-tooltip></q-btn>
       <span v-show="showFileUpload" class="q-ma-sm">
             <q-uploader url="" clearable extensions=".jpg, .jpeg, .png, .bmp, .ico, .pdf" @add="showConvertImage" @remove:cancel="hideConvertButton"
@@ -98,25 +98,22 @@
        @click="updateHistOut" dense> <small>{{getScriptObject(outputPast).label}}</small> </q-btn>
       <q-icon name="history" size="25px" v-show="outputPast !== ''" class="print-hide"/>
       </div>
+ <div class="q-mt-sm"><output-buttons @fontsizeinc="fontSize += 20" @fontsizedec="fontSize -= 20"
+       @printdoc="printDocument" @screenshot="imageConvert(downloadImage.bind(this))" @copytext="copy" :convertText="convertText" :content="downHTML"></output-buttons></div>
+      <q-btn icon="share" label="text" class="q-ma-sm" @click="shareCordovaText" v-if="$q.platform.is.cordova"/> <q-btn icon="share" label="image" class="q-ma-sm" @click="imageConvert(shareCordovaImage.bind(this))" v-if="$q.platform.is.cordova" />
+    <output-options :inputScript="inputScript" :outputScript="outputScript" :postOptionsInput="postOptions" :sourcePreserveInput="sourcePreserve" :showscriptName="false"
+       :convertText="convertText" :hideSourcePreserve="false"
+        @input="convertOutputOptions($event)" ></output-options>
     <div
       ref="brahmiText"
       class="text-output col-xs-12 col-md-12 q-pa-md q-pr-lg bg-grey-1 "
       >
-       <span :class="getOutputClass(outputScript, postOptions, convertText)" :style="{'font-size': fontSize + '%'}"
-        v-html="sanitize(convertText)"></span>
+       <div :class="getOutputClass(outputScript, postOptions, convertText)" :style="{'font-size': fontSize + '%'}"
+        v-html="sanitize(convertText)"></div>
       </div>
     <output-notice :inputScript="inputScript" :outputScript="outputScript" :postOptions="postOptions"
      :convertText="convertText" :inputText="textInput"></output-notice>
-      <div class="q-mt-sm"><output-buttons @fontsizeinc="fontSize += 20" @fontsizedec="fontSize -= 20"
-       @printdoc="printDocument" @screenshot="imageConvert(downloadImage.bind(this))" @copytext="copy" :convertText="convertText" :content="downHTML"></output-buttons></div>
-      <q-btn icon="share" label="text" class="q-ma-sm" @click="shareCordovaText" v-if="$q.platform.is.cordova"/> <q-btn icon="share" label="image" class="q-ma-sm" @click="imageConvert(shareCordovaImage.bind(this))" v-if="$q.platform.is.cordova" /> <br/>
-      <span v-if="typeof preserveSourceExampleOut[outputScript] !== 'undefined'">
-        <span><q-toggle color="dark" v-model="sourcePreserve" label="Preserve source" class="q-ml-sm q-mb-sm q-mt-md print-hide" @input="convert" /><q-tooltip>Preserve the source as-is and don't change the text to improve readability. May use archaic characters and/or diacritics.</q-tooltip></span>
-        <small><div class="q-ml-xl print-hide" v-html="preserveSourceExampleOut[outputScript]"></div></small>
-      </span>
-    <output-options :inputScript="inputScript" :outputScript="outputScript" :postOptionsInput="postOptions"
-       :convertText="convertText"
-        v-model="postOptions" @input="convert"></output-options>    </div>
+    </div>
     </div>
   <transition
     enter-active-class="animated fadeIn"
@@ -141,7 +138,7 @@
 </style>
 
 <script>
-import {QProgress, QTab, QTabs, QTooltip, QEditor, QRadio, QBtn, QField, QBtnToggle, QToggle, QInput, QSelect, QOptionGroup, QAlert, QSpinnerComment, QPageSticky, QUploader} from 'quasar'
+import {QProgress, QTab, QTabs, QTooltip, QEditor, QRadio, QBtn, QField, QBtnToggle, QToggle, QInput, QSelect, QOptionGroup, QAlert, QSpinnerComment, QPageSticky, QUploader, QCollapsible} from 'quasar'
 import sanitizeHtml from 'sanitize-html'
 import html2canvas from 'html2canvas'
 import Transliterate from '../components/Transliterate'
@@ -150,6 +147,8 @@ import OutputOptions from '../components/OutputOptions'
 import InputNotice from '../components/InputNotice'
 import OutputNotice from '../components/OutputNotice'
 import OutputButtons from '../components/OutputButtons'
+import ConverterMenu from '../components/ConverterMenu'
+
 import scrollTo from 'vue-scrollto'
 import { ScriptMixin } from '../mixins/ScriptMixin'
 import { createWorker } from 'tesseract.js'
@@ -192,6 +191,7 @@ export default {
     QToggle,
     QInput,
     QSelect,
+    QCollapsible,
     QSpinnerComment,
     QOptionGroup,
     QTooltip,
@@ -202,7 +202,8 @@ export default {
     OutputNotice,
     OutputButtons,
     QPageSticky,
-    QUploader
+    QUploader,
+    ConverterMenu
   },
   data () {
     return {
@@ -238,7 +239,8 @@ export default {
       ocrProgress: 0,
       pdfProgress: '',
       ocrStatus: '',
-      ocrLang: 'osd'
+      ocrLang: 'osd',
+      postOptionsSourcePreserve: [[], false]
     }
   },
   mounted () {
@@ -297,6 +299,8 @@ export default {
     } else {
       this.scrollExists = false
     }
+
+    this.postOptionsSourcePreserve = [this.postOptions, this.sourcePreserve]
   },
   updated: function () {
     if (window.innerWidth > document.body.clientWidth) {
@@ -363,6 +367,11 @@ export default {
         })
       })
     }, */
+    convertOutputOptions: function (event) {
+      this.postOptions = event[0]
+      this.sourcePreserve = event[1]
+      this.convert()
+    },
     downHTML: function () {
       this.downloadHTML(this.$refs.brahmiText.innerHTML)
     },
@@ -548,6 +557,22 @@ export default {
 
       if (this.inputScript === 'Oriya' && this.outputScript === 'Bengali') {
         this.$set(this, 'postOptions', ['khandatabatova'])
+      }
+
+      var nikkuds = ['\u05B7', '\u05B8', '\u05B4', '\u05B4י', '\u05BB', '\u05C2', '\u05C1', '\u05B6', '\u05B5', '\u05B9', 'וֹ', '\u05B1', '\u05B2', '\u05B3', '\u05BC', '\u05B0', '\u05C7']
+
+      console.log(nikkuds.some(nikkud => this.textInput.includes(nikkud)))
+
+      if (this.inputScript === 'Hebrew' && this.scriptSemiticListAll.includes(this.outputScript) && !nikkuds.some(nikkud => this.textInput.includes(nikkud))) {
+        this.$set(this, 'preOptions', ['novowelshebrewSemitic'])
+      } else {
+        this.$set(this, 'preOptions', [])
+      }
+
+      if (this.inputScript === 'Hebrew' && this.scriptIndicList.includes(this.outputScript) && !nikkuds.some(nikkud => this.textInput.includes(nikkud))) {
+        this.$set(this, 'preOptions', ['novowelshebrewIndic'])
+      } else {
+        this.$set(this, 'preOptions', [])
       }
 
       this.convert()
@@ -738,6 +763,7 @@ export default {
         this.postOptions = this.postOptions.filter(x => x !== 'urduRemoveInherent')
       }
 
+      console.log('Source Preserve usage is ' + this.sourcePreserve)
       var data = {
         source: this.inputScript,
         target: this.outputScript,

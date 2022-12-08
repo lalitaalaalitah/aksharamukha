@@ -5,7 +5,9 @@
         {{script2}}
       </div>
     <div v-for="(char, index) in chars2" :key="char+index" class="col-xs-2 col-lg-1">
-          <span :class="script2.toLowerCase()"> {{char}} </span>
+          <span :class="script2.toLowerCase()">
+             <span :class="charsrev[index] !== chars1['HK'][index] ? 'text-red-2' : ''">{{char}} </span>
+          </span>
     </div>
   </div>
       <hr/>
@@ -28,7 +30,7 @@ import {ScriptMixin} from '../mixins/ScriptMixin'
 
 export default {
   // name: 'ComponentName',
-  props: ['chars', 'script1', 'script2', 'chars1', 'chars2'],
+  props: ['chars', 'script1', 'script2', 'chars1', 'chars2', 'charsrev'],
   mixins: [ScriptMixin],
   created: function () {
     this.compoundsGen()

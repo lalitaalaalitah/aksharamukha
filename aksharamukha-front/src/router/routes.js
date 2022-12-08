@@ -53,6 +53,14 @@ export default [
   },
 
   {
+    path: '/composer-mp',
+    component: () => import('layouts/default-mp'),
+    children: [
+      { path: '', component: () => import('pages/composer-mp') }
+    ]
+  },
+
+  {
     path: '/documentation',
     component: () => import('layouts/default'),
     children: [
@@ -90,6 +98,14 @@ export default [
   },
 
   {
+    path: '/describesemitic/:script',
+    component: () => import('layouts/default'),
+    children: [
+      { path: '', component: () => import('pages/describesemitic') }
+    ]
+  },
+
+  {
     path: '/website',
     component: () => import('layouts/default'),
     children: [
@@ -98,10 +114,26 @@ export default [
   },
 
   {
+    path: '/keyboards',
+    component: () => import('layouts/default'),
+    children: [
+      { path: '', component: () => import('pages/keyboards') }
+    ]
+  },
+
+  {
     path: '/roman',
     component: () => import('layouts/default'),
     children: [
       { path: '', component: () => import('pages/latinmatrix') }
+    ]
+  },
+
+  {
+    path: '/roman-semitic',
+    component: () => import('layouts/default'),
+    children: [
+      { path: '', component: () => import('pages/semitic-latin') }
     ]
   },
 
@@ -126,6 +158,14 @@ export default [
     component: () => import('layouts/default'),
     children: [
       { path: '', component: () => import('pages/scriptmatrix') }
+    ]
+  },
+
+  {
+    path: '/semitic-matrix',
+    component: () => import('layouts/default'),
+    children: [
+      { path: '', component: () => import('pages/semitic-matrix') }
     ]
   },
 
@@ -180,6 +220,14 @@ export default [
   {
     path: '/input/:script',
     component: () => import('layouts/default'),
+    children: [
+      { path: '', component: () => import('pages/IME') }
+    ]
+  },
+
+  {
+    path: '/input-embed/:script',
+    component: () => import('layouts/default-mp'),
     children: [
       { path: '', component: () => import('pages/IME') }
     ]

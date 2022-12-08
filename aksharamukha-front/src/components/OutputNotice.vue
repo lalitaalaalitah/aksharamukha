@@ -38,13 +38,32 @@
      <div class="notice q-ma-sm" v-show="outputScript === 'Mongolian'">The Mongolian mapping for Ali Gali is not yet verified. If you have any feedback on the mapping and the forms of the letters used, please send it to vinodh@virtualvinodh.com</div>
       <div class="notice q-ma-sm" v-show="outputScript === 'Tamil' &&
             String(convertText).includes('𑌃')    ">Grantha Visarga only works with Google's Noto Tamil fonts </div>
-      <div class="notice q-ma-sm" v-show="outputScript === 'Tamil' &&
+      <div class="notice q-ma-sm" v-show="outputScript === 'Telugu' &&
+            String(convertText).includes('\u0C3C')    ">This requires the use of <a href="https://github.com/TiroTypeworks/Indigo/tree/main/fonts/TiroTelugu/OTF">Tiro Telugu</a> font to display the Nukta (क़ → <span class="telugunukta">క఼</span>) properly.</div>
+      <div class="notice q-ma-sm" v-show="outputScript === 'Telugu' &&
+            String(convertText).includes('\u0C5D')    ">This requires the use of <a href="https://github.com/TiroTypeworks/Indigo/tree/main/fonts/TiroTelugu/OTF">Tiro Telugu</a> font to display the Nakaara Pollu <span class="telugunukta">ౝ</span> properly.</div>
+ <div class="notice q-ma-sm" v-show="outputScript === 'Kannada' &&
+            String(convertText).includes('\u0CDD')    ">This requires the use of <a href="https://github.com/TiroTypeworks/Indigo/tree/main/fonts/TiroKannada/OTF">Tiro Kannada</a> font to display the Nakaara Pollu <span class="kannadapollu">ೝ</span> properly.</div>
+
+<div class="notice q-ma-sm" v-show="outputScript === 'Tamil' &&
             postOptions.includes('oldtamilortho') ">You can use the <a href="https://www.fontsc.com/font/lohit-tamil-classical">Lohit Tamil Classical</a> font to represent the old orthography for Tamil</div>
       <div class="notice q-ma-sm" v-show="(String(convertText).includes('॒') || String(convertText).includes('᳚') ||
             String(convertText).includes('॑')) && vedicScripts.includes(outputScript)">This text uses Vedic notational marks. Without an appropriate font, the text would not be rendered properly. Look into the individual <router-link :to="'/describe/' + outputScript">script</router-link> page for a working font.</div>
+
+      <div class="notice q-ma-sm" v-show="(String(convertText).includes('𑇌') || String(convertText).includes('𑇋'))">This text uses custom notations to display Kashmiri vowels. The text is best displayed using the Satisar Sharada font.</div>
+
       <div class="notice q-ma-sm" v-show="(String(inputText).includes('॒') || String(inputText).includes('᳚') ||
             String(inputText).includes('॑')) && !vedicScripts.includes(outputScript)">The input text contains combining Vedic accent marks. These have been replaced with a readable notation.</div>
       <div class="notice q-ma-sm" v-show="inputScript === 'Tamil' && outputScript === 'IPA'">The results displayed have been obtained from <a href="http://anunaadam.appspot.com" target="_blank">Anunaadam</a>. Use the tool for further options.</div>
+      <!-- Semitic notices -->
+      <div class="notice q-ma-sm text-red" v-show="scriptSemiticList.includes(inputScript) && scriptLatinList.includes(outputScript) &&
+      !semiticLatinList.includes(outputScript)">You're converting from a consonantal Abjad to an Indic romanization scheme. This may result in inclusion of 'a' with every consonant. Please choose a semitic romanization scheme like Roman (Semitic) to view the appropiate romanization.</div>
+      <div class="notice q-ma-sm text-red" v-show="['Urdu', 'Hebrew', 'Punjabi', 'Hebrew'].includes(inputScript) && scriptLatinList.includes(outputScript) &&
+      !semiticLatinList.includes(outputScript)">You're converting from a consonantal Abjad to an Indic romanization scheme. This may result in inclusion of 'a' with every consonant. Please choose a semitic romanization scheme like Roman (Semitic) to view the appropiate romanization.</div>
+      <div class="notice q-ma-sm" v-show="scriptIndicList.includes(inputScript) && scriptSemiticList.includes(outputScript) && !vocalized.includes(outputScript)">You're converting from a vocalized script to a consonantal Abjad. Short vowels will be removed and long vowels will be shown as <i>Mater Lectionis</i>.</div>
+      <div class="notice q-ma-sm" v-show="scriptSemiticList.includes(inputScript) && scriptIndicList.includes(outputScript)">You're converting from a consonantal Abjad to a vocalized script. The consonantal skeleton will be padded with an inherent 'a' to aid readability, if no vowels diacritics are present.</div>
+      <div class="notice q-ma-sm" v-show="semiticLatinList.includes(outputScript) && String(convertText).includes('꞉')">꞉ indicates gemination of the preceding consonant. rak꞉a → rakka</div>
+
   </span>
 </template>
 
